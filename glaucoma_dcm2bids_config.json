@@ -1,0 +1,58 @@
+{
+  "searchMethod": "fnmatch",
+  "dcm2niixOptions": "-b y -ba y -z y -f '%i_%s_%d'",
+  "descriptions": [
+    {
+      "dataType": "anat",
+      "modalityLabel": "T1w",
+      "criteria": {
+        "SeriesDescription": "T1*"
+      },
+      "sidecarChanges": {
+        "ProtocolName": "T1"
+      }
+    },
+    {
+      "dataType": "anat",
+      "modalityLabel": "flair",
+      "criteria": {
+        "SeriesDescription": "*FLAIR*"
+      },
+      "sidecarChanges": {
+        "ProtocolName": "flair"
+      }
+    },
+    {
+      "dataType": "dwi",
+      "modalityLabel": "muse",
+      "criteria": {
+        "SeriesDescription": "*-MUSE"
+      }
+    },
+    {
+      "dataType": "fmap",
+      "modalityLabel": "muse",
+      "customLabels": "dir-AP",
+      "IntendedFor": 1,
+      "criteria": {
+        "SeriesDescription": "*-MUSE_pepolar"
+      }
+    },
+    {
+      "dataType": "dwi",
+      "modalityLabel": "hb",
+      "criteria": {
+        "SeriesDescription": "*DWI_HB"
+      }
+    },
+    {
+      "dataType": "fmap",
+      "modalityLabel": "hb",
+      "customLabels": "dir-AP",
+      "IntendedFor": 1,
+      "criteria": {
+        "SeriesDescription": "*DWI_HB_pepolar"
+      }
+    }
+  ]
+}
