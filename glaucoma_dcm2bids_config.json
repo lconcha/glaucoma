@@ -24,15 +24,16 @@
     },
     {
       "dataType": "dwi",
-      "modalityLabel": "muse",
+      "modalityLabel": "dwi",
+      "customLabels": "acq-muse",
       "criteria": {
         "SeriesDescription": "*-MUSE"
       }
     },
     {
       "dataType": "fmap",
-      "modalityLabel": "muse",
-      "customLabels": "dir-AP",
+      "modalityLabel": "epi",
+      "customLabels": "acq-muse",
       "IntendedFor": 1,
       "criteria": {
         "SeriesDescription": "*-MUSE_pepolar"
@@ -40,15 +41,16 @@
     },
     {
       "dataType": "dwi",
-      "modalityLabel": "hb",
+      "modalityLabel": "dwi",
+      "customLabels": "acq-hb",
       "criteria": {
         "SeriesDescription": "*DWI_HB"
       }
     },
     {
       "dataType": "fmap",
-      "modalityLabel": "hb",
-      "customLabels": "dir-AP",
+      "modalityLabel": "epi",
+      "customLabels": "acq-hb",
       "IntendedFor": 1,
       "criteria": {
         "SeriesDescription": "*DWI_HB_pepolar"
