@@ -3,31 +3,60 @@ source `which my_do_cmd`
 fakeflag=""
 
 t1=$1
-fa=$2
-outbase=$3
+dwi_HB=$2;   # corrected
+dwi_MUSE=$3; # corrected
+outbase=$4
+force=0
+keep_tmp=1
+
+# while getopts "tf" options; do
+#   case "$options" in
+#     f)
+#       force=1;  echolor green "[INFO] Will overwrite outputs"; shift
+#       ;;
+#     t)
+#       keep_tmp=1;  echolor green "[INFO] Will keep temp directory"; shift
+#     ;;
+#   esac
+# done
+#shift $((OPTIND-1))
+
+echo "
+T1      : $t1
+dwi_HB  : $dwi_HB
+outbase : $outbase
+"
+
 
 tmpDir=$(mktemp -d)
 
 atlas_t1=$FSLDIR/data/standard/MNI152_T1_2mm.nii.gz
 atlas_fa=$FSLDIR/data/standard/FSL_HCP1065_FA_2mm.nii.gz
 
-mask_with_eyes=/misc/mansfield/lconcha/exp/glaucoma/MNI152_T1_2mm_brain_mask_dil_withEyes.nii.gz
+mask_eyes=/misc/mansfield/lconcha/exp/glaucoma/eyes_mask_MNI_2mm.nii.gz
 
 echolor cyan "[INFO] Resampling to 2 mm"
 my_do_cmd $fakeflag mrgrid \
   -vox 2 \
+  -interp nearest \
   $t1 \
   regrid \
   ${tmpDir}/t1_2mm.nii
 
 
+fcheck=${outbase}_sub2atlas_lin.nii.gz
+if [ ! -f $fcheck -o $force -eq 1 ]; then
 echolor cyan "[INFO] Running FLIRT"
 my_do_cmd $fakeflag flirt \
   -ref  $atlas_t1 \
   -in   ${tmpDir}/t1_2mm.nii \
   -out  ${outbase}_sub2atlas_lin \
   -omat ${outbase}_sub2atlas_lin.mat
+else echolor green "[INFO] File exists: $fcheck"; fi
   
+
+fcheck=${outbase}_sub2atlas_nlin_field.nii.gz
+if [ ! -f $fcheck -o $force -eq 1 ]; then
 echolor cyan "[INFO] Running FNIRT"
 my_do_cmd $fakeflag fnirt \
   --ref=$atlas_t1 \
@@ -36,22 +65,127 @@ my_do_cmd $fakeflag fnirt \
   --iout=${outbase}_sub2atlas_nlin \
   --aff=${outbase}_sub2atlas_lin.mat \
   -v
+else echolor green "[INFO] File exists: $fcheck"; fi
 
+
+fcheck=${outbase}_atlas2sub_nlin_field.nii.gz
+if [ ! -f $fcheck -o $force -eq 1 ]; then
+echolor cyan "[INFO] Inverting warp"
 my_do_cmd $fakeflag invwarp \
   -w ${outbase}_sub2atlas_nlin_field \
   -o ${outbase}_atlas2sub_nlin_field \
   -r ${tmpDir}/t1_2mm.nii \
   -v
-  
+else echolor green "[INFO] File exists: $fcheck"; fi
+
+fcheck=${outbase}_atlas2sub_mask_eyes.nii.gz
+if [ ! -f $fcheck -o $force -eq 1 ]; then
+echolor cyan "[INFO] Putting mask in t1 native space"
 my_do_cmd $fakeflag applywarp \
-  -i $mask_with_eyes \
-  -o ${outbase}_atlas2sub_mask_with_eyes \
+  -i $mask_eyes \
+  -o ${outbase}_atlas2sub_mask_eyes \
   -r $t1 \
   -w ${outbase}_atlas2sub_nlin_field \
   --interp=nn \
   -v  
-#  -r ${tmpDir}/t1_2mm.nii \
-  
+else echolor green "[INFO] File exists: $fcheck"; fi
 
 
-rm -fR $tmpDir
+echolor cyan "[INFO] -------- DTI for masking ------------"
+my_do_cmd $fakeflag dwi2mask \
+  $dwi_HB ${tmpDir}/dwi_HB_mask.mif  
+
+dwiextract \
+  -shell 800 \
+  $dwi_HB - | \
+mrmath -axis 3 - mean - |\
+mrcalc - ${tmpDir}/dwi_HB_mask.mif -mul \
+  ${tmpDir}/HB_av_b800_masked.nii
+
+my_do_cmd $fakeflag bet \
+  $t1 \
+  ${tmpDir}/t1_m \
+  -m
+
+fcheck=${outbase}_t12dwi.nii.gz
+if [ ! -f $fcheck -o $force -eq 1 ]; then
+my_do_cmd $fakeflag flirt \
+  -ref ${tmpDir}/HB_av_b800_masked.nii \
+  -in  ${tmpDir}/t1_m \
+  -out ${outbase}_t12dwi.nii.gz \
+  -omat ${outbase}_t12dwi.mat
+else echolor green "[INFO] File exists: $fcheck"; fi
+
+fcheck=${outbase}_dwi_HB_mask_with_eyes.nii.gz
+if [ ! -f $fcheck -o $force -eq 1 ]; then
+my_do_cmd flirt \
+  -ref ${tmpDir}/HB_av_b800_masked.nii \
+  -in ${outbase}_atlas2sub_mask_eyes \
+  -applyxfm -init ${outbase}_t12dwi.mat \
+  -out ${outbase}_dwi_HB_mask_eyes.nii.gz
+else echolor green "[INFO] File exists: $fcheck"; fi
+
+
+dwi2tensor -mask ${outbase}_dwi_HB_mask_eyes.nii.gz $dwi_HB - |\
+tensor2metric -fa ${tmpDir}/fa.mif -adc ${tmpDir}/adc.mif -
+
+mrcalc $(mrcalc ${tmpDir}/fa.mif 0.1 -gt -) $(mrcalc ${tmpDir}/fa.mif 1 -lt -) -and ${tmpDir}/fa_ok.mif
+mrcalc $(mrcalc ${tmpDir}/adc.mif 0.0001 -gt -) $(mrcalc ${tmpDir}/adc.mif 0.01 -lt -) -and ${tmpDir}/adc_ok.mif
+mrcalc ${tmpDir}/*_ok.mif -mul \
+  ${outbase}_dwi_HB_mask_eyes.nii.gz -mul 0 -gt \
+  ${tmpDir}/dwi_HB_mask.mif  -or \
+  ${outbase}_dwi_HB_mask_with_eyes_clean.nii.gz
+
+
+echolor cyan "[INFO] ---------- Working on MUSE DWI ----------"
+dwiextract -bzero $dwi_MUSE - | mrmath -axis 3 - mean ${tmpDir}/MUSE_av_b0.nii
+dwiextract -bzero $dwi_HB   - | mrmath -axis 3 - mean ${tmpDir}/HB_av_b0.nii
+
+dwi2mask $dwi_MUSE ${tmpDir}/MUSE_mask.nii
+mrcalc ${tmpDir}/MUSE_av_b0.nii ${tmpDir}/MUSE_mask.nii -mul ${tmpDir}/MUSE_masked.nii
+
+
+# my_do_cmd $fakeflag flirt \
+#   -ref  ${tmpDir}/MUSE_av_b0.nii \
+#   -in   ${tmpDir}/HB_av_b0.nii \
+#   -out  ${outbase}_MUSE2HB_b0.nii.gz \
+#   -omat ${outbase}_MUSE2HB.mat
+
+
+fcheck=${outbase}_T12MUSE.nii.gz
+if [ ! -f $fcheck -o $force -eq 1 ]; then
+my_do_cmd $fakeflag flirt \
+  -in   ${tmpDir}/t1_m \
+  -ref  ${tmpDir}/MUSE_masked.nii \
+  -out  ${outbase}_T12MUSE.nii.gz \
+  -omat ${outbase}_T12MUSE.mat
+else echolor green "[INFO] File exists: $fcheck"; fi
+
+
+
+fcheck=${outbase}_T12MUSE.mat
+if [ ! -f $fcheck -o $force -eq 1 ]; then
+my_do_cmd flirt \
+  -ref ${tmpDir}/MUSE_masked.nii \
+  -in ${outbase}_atlas2sub_mask_eyes \
+  -applyxfm -init ${outbase}_T12MUSE.mat \
+  -out ${outbase}_MUSE_mask_eyes.nii.gz
+else echolor green "[INFO] File exists: $fcheck"; fi
+
+
+dwi2tensor -mask ${outbase}_MUSE_mask_eyes.nii.gz $dwi_MUSE - |\
+tensor2metric -fa ${tmpDir}/MUSE_fa.mif -adc ${tmpDir}/MUSE_adc.mif -
+mrcalc $(mrcalc ${tmpDir}/MUSE_fa.mif 0.1 -gt -)     $(mrcalc ${tmpDir}/MUSE_fa.mif 1 -lt -) -and ${tmpDir}/MUSE_fa_ok.mif
+mrcalc $(mrcalc ${tmpDir}/MUSE_adc.mif 0.0001 -gt -) $(mrcalc ${tmpDir}/MUSE_adc.mif 0.01 -lt -) -and ${tmpDir}/MUSE_adc_ok.mif
+mrcalc ${tmpDir}/MUSE_*_ok.mif -mul \
+  ${outbase}_MUSE_mask_eyes.nii.gz -mul 0 -gt \
+  ${tmpDir}/MUSE_mask.nii  -or \
+  ${outbase}_dwi_MUSE_mask_with_eyes_clean.nii.gz
+
+
+if [ $keep_tmp -eq 1 ]
+then
+  echolor yellow "[INFO] Not deleting temp directory $tmpDir"
+else
+  rm -fR $tmpDir
+fi
