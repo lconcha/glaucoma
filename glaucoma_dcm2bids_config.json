@@ -34,7 +34,7 @@
       "dataType": "fmap",
       "modalityLabel": "epi",
       "customLabels": "acq-muse",
-      "IntendedFor": 1,
+      "IntendedFor": 2,
       "criteria": {
         "SeriesDescription": "*-MUSE_pepolar"
       }
@@ -51,7 +51,7 @@
       "dataType": "fmap",
       "modalityLabel": "epi",
       "customLabels": "acq-hb",
-      "IntendedFor": 1,
+      "IntendedFor": 4,
       "criteria": {
         "SeriesDescription": "*DWI_HB_pepolar"
       }
