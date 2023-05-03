@@ -16,7 +16,7 @@
       "dataType": "anat",
       "modalityLabel": "flair",
       "criteria": {
-        "SeriesDescription": "*FLAIR*"
+        "SeriesDescription": "FLAIR"
       },
       "sidecarChanges": {
         "ProtocolName": "flair"
