@@ -2,12 +2,22 @@
 source `which my_do_cmd`
 fakeflag=""
 
-t1=$1
-dwi_HB=$2;   # corrected
-dwi_MUSE=$3; # corrected
-outbase=$4
+
+sID=$1
+bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
+
+# t1=$1
+# dwi_HB=$2;   # corrected
+# dwi_MUSE=$3; # corrected
+# outbase=$4
+
+t1=${bids_dir}/sub-${sID}/anat/sub-4375_T1w.nii.gz
+dwi_HB=${bids_dir}/derivatives/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi_de.mif
+dwi_MUSE=${bids_dir}/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_de.mif
+outbase=${bids_dir}/derivatives/sub-${sID}/dwi/regnmask
 force=0
 keep_tmp=1
+
 
 # while getopts "tf" options; do
 #   case "$options" in
@@ -21,11 +31,28 @@ keep_tmp=1
 # done
 #shift $((OPTIND-1))
 
+
+isOK=1
+for f in $t1 $dwi_HB $dwi_MUSE
+do
+  if [ ! -f $f ]; then
+    echolor red "[ERROR] Cannot find file: $f"
+    isOK=0
+  else
+    echolor cyan "[INFO] Found file: $f"
+  fi
+done
+if [ $isOK -eq 0 ]; then echolor "[ERROR] Cannot continue";exit 2; fi
+
+
+
 echo "
 T1      : $t1
 dwi_HB  : $dwi_HB
 outbase : $outbase
 "
+
+exit 0
 
 
 tmpDir=$(mktemp -d)
