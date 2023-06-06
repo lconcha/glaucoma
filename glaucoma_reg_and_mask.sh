@@ -2,6 +2,8 @@
 source `which my_do_cmd`
 fakeflag=""
 
+synthstrip=/misc/mansfield/lconcha/containers/synthstrip-singularity
+
 
 sID=$1
 bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
@@ -11,7 +13,7 @@ bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
 # dwi_MUSE=$3; # corrected
 # outbase=$4
 
-t1=${bids_dir}/sub-${sID}/anat/sub-4375_T1w.nii.gz
+t1=${bids_dir}/sub-${sID}/anat/sub-${sID}_T1w.nii.gz
 dwi_HB=${bids_dir}/derivatives/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi_de.mif
 dwi_MUSE=${bids_dir}/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_de.mif
 outbase=${bids_dir}/derivatives/sub-${sID}
@@ -42,7 +44,7 @@ do
     echolor cyan "[INFO] Found file: $f"
   fi
 done
-if [ $isOK -eq 0 ]; then echolor "[ERROR] Cannot continue";exit 2; fi
+if [ $isOK -eq 0 ]; then echolor red "[ERROR] Cannot continue";exit 2; fi
 
 
 
@@ -64,7 +66,25 @@ mask_eyes=/misc/mansfield/lconcha/exp/glaucoma/MNI152_T1_2mm_eyes_opticNerves_ma
 
 
 echolor cyan "[INFO] Removing neck"
-#fcheck=${outbase}
+fcheck=${outbase}/anat/t1_noneck.nii.gz
+if [ ! -f $fcheck -o $force -eq 1 ]; then
+  my_do_cmd $fakeflag robustfov -i $t1 -r ${outbase}/anat/t1_noneck.nii.gz
+  t1=${outbase}/anat/t1_noneck.nii.gz
+else echolor green "[INFO] File exists: $fcheck"; t1=$fcheck; fi
+
+
+
+echolor cyan "[INFO] Brain mask for T1 via sytnthstrip"
+fcheck=${outbase}/anat/t1_mask.nii.gz
+if [ ! -f $fcheck -o $force -eq 1 ]; then
+  $synthstrip --no-csf \
+    -i $t1 \
+    -o ${outbase}/anat/t1_brain.nii.gz \
+    -m ${outbase}/anat/t1_mask.nii.gz
+else echolor green "[INFO] File exists: $fcheck"; t1=$fcheck; fi
+
+
+
 
 
 
