@@ -122,6 +122,8 @@ else
       -coord 3 0 ${DWI_MUSE_pepolar} ${tmpDir}/MUSE_b0_AP.mif
     mrcat -axis 3 ${tmpDir}/MUSE_b0_PA.mif ${tmpDir}/MUSE_b0_AP.mif ${tmpDir}/MUSE_b0_pair.mif
     mkdir -p $bids_dir/derivatives/sub-${sID}/dwi/quad_muse
+    slicetiming=${tmpDir}/slicetimings.txt
+    jq .SliceTiming[] $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.json > $slicetiming
     dwifslpreproc \
       $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.nii.gz \
       $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_de.mif \
@@ -131,7 +133,10 @@ else
       -align_seepi \
       -eddy_options "  --data_is_shelled --slm=linear" \
       -scratch ${tmpDir} \
-      -eddyqc_all $bids_dir/derivatives/sub-${sID}/dwi/quad_muse
+      -eddyqc_all $bids_dir/derivatives/sub-${sID}/dwi/quad_muse \
+      -scratch /misc/mansfield/lconcha/exp/glaucoma/nobackup \
+      -eddy_slspec $slicetiming \
+      -nocleanup -debug
   else echolor green "[INFO] File exists: $fcheck"; fi
 fi
 
