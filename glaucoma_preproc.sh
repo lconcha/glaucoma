@@ -6,16 +6,11 @@ sID=$1
 
 bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
 nifti_dir=/misc/mansfield/lconcha/exp/glaucoma/raw
-#preproc_dir=/misc/mansfield/lconcha/exp/glaucoma/preproc
 
 DWI_HB_full=${bids_dir}/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi.nii.gz
 DWI_HB_pepolar=${bids_dir}/sub-${sID}/fmap/sub-${sID}_acq-hb_epi.nii.gz
 DWI_MUSE_full=${bids_dir}/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi.nii.gz
 DWI_MUSE_pepolar=${bids_dir}/sub-${sID}/fmap/sub-${sID}_acq-muse_epi.nii.gz
-
-#slspec=${DWI_HB_full%.nii.gz}_slspec.txt
-#HB_bvec=${DWI_HB_full%.nii.gz}.bvec
-#HB_bval=${DWI_HB_full%.nii.gz}.bval
 
 
 
@@ -79,12 +74,19 @@ else
       -rpe_header \
       -se_epi ${tmpDir}/HB_b0_pair.mif \
       -align_seepi \
-      -eddy_options "  --data_is_shelled --slm=linear" \
+      -eddy_options "  --data_is_shelled --slm=linear --mporder=6 --s2v_niter=5 --s2v_lambda=1 --s2v_interp=trilinear " \
       -scratch ${tmpDir} \
       -eddyqc_all $bids_dir/derivatives/sub-${sID}/dwi/quad_hb
   else echolor green "[INFO] File exists: $fcheck"; fi
 fi
 
+
+
+
+
+
+
+### MUSE
 
 isOK=1
 for f in $DWI_MUSE_full $DWI_MUSE_pepolar
@@ -122,8 +124,7 @@ else
       -coord 3 0 ${DWI_MUSE_pepolar} ${tmpDir}/MUSE_b0_AP.mif
     mrcat -axis 3 ${tmpDir}/MUSE_b0_PA.mif ${tmpDir}/MUSE_b0_AP.mif ${tmpDir}/MUSE_b0_pair.mif
     mkdir -p $bids_dir/derivatives/sub-${sID}/dwi/quad_muse
-    slicetiming=${tmpDir}/slicetimings.txt
-    jq .SliceTiming[] $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.json > $slicetiming
+    
     dwifslpreproc \
       $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.nii.gz \
       $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_de.mif \
@@ -131,12 +132,10 @@ else
       -rpe_header \
       -se_epi ${tmpDir}/MUSE_b0_pair.mif \
       -align_seepi \
-      -eddy_options "  --data_is_shelled --slm=linear" \
+      -eddy_options "  --data_is_shelled --slm=linear --mporder=6  --s2v_niter=5 --s2v_lambda=1 --s2v_interp=trilinear " \
       -scratch ${tmpDir} \
-      -eddyqc_all $bids_dir/derivatives/sub-${sID}/dwi/quad_muse \
-      -scratch /misc/mansfield/lconcha/exp/glaucoma/nobackup \
-      -eddy_slspec $slicetiming \
-      -nocleanup -debug
+      -eddyqc_all $bids_dir/derivatives/sub-${sID}/dwi/quad_muse
+        
   else echolor green "[INFO] File exists: $fcheck"; fi
 fi
 
