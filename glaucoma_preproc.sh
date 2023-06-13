@@ -8,10 +8,10 @@ source `which my_do_cmd`
 
 do_hb=0
 do_muse=0
+tmp_cleanup=""
 
 
-
-while getopts "hmb" arg
+while getopts "hmbt" arg
 do
   case $arg in
     h)
@@ -23,6 +23,10 @@ do
     b)
       do_hb=1
       do_muse=1
+    ;;
+    t)
+      tmp_cleanup=" -nocleanup "
+      echolor cyan "[INFO] Will retain temporary directory."
     ;;
     *)
       echolor red "[ERROR] Unrecognized option"
@@ -47,6 +51,7 @@ DWI_MUSE_pepolar=${bids_dir}/sub-${sID}/fmap/sub-${sID}_acq-muse_epi.nii.gz
 
 mkdir -p $bids_dir/derivatives/sub-${sID}/{dwi,anat}
 tmpDir=$(mktemp -d)
+echolor cyan "[INFO] temp dir is $tmpDir"
 
 
 
@@ -97,6 +102,7 @@ if [ $do_hb -eq 1 ]; then
         ${tmpDir}/dwi_hb_d.mif
       mkdir -p $bids_dir/derivatives/sub-${sID}/dwi/quad_hb
       dwifslpreproc \
+        $tmp_cleanup \
         $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi_d.nii.gz \
         $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi_de.mif \
         -json_import $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi_d.json \
@@ -155,6 +161,7 @@ if [ $do_muse -eq 1 ]; then
       mkdir -p $bids_dir/derivatives/sub-${sID}/dwi/quad_muse
       
       dwifslpreproc \
+        $tmp_cleanup \
         $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.nii.gz \
         $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_de.mif \
         -json_import $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.json \
@@ -169,4 +176,7 @@ if [ $do_muse -eq 1 ]; then
   fi
 fi
 
+
+if [ -z $tmp_cleanup ]; then
   rm -fR $tmpDir
+fi
