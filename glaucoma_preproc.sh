@@ -2,8 +2,13 @@
 source `which my_do_cmd`
 
 
-
-
+# check if we have dipy enabled
+if [ -z $(which dipy_denoise_patch2self) ]
+then
+  echolor red "[ERROR] Cannot find dipy_denoise_patch2self. Please enable dipy."
+  echolor red "        Try: conda activate /home/inb/lconcha/fmrilab_software/inb_anaconda3/envs/dipy"
+  exit 2
+fi
 
 
 do_hb=0
@@ -134,20 +139,32 @@ if [ $do_muse -eq 1 ]; then
 
   fcheck=$bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.nii.gz
     if [ ! -f $fcheck ]; then
-    my_do_cmd mrconvert \
-      -json_import ${DWI_MUSE_full%.nii.gz}.json \
-      -fslgrad ${DWI_MUSE_full%.nii.gz}.{bvec,bval} \
-      $DWI_MUSE_full \
-      ${tmpDir}/dwi_muse.mif
+    #my_do_cmd mrconvert \
+    #  -json_import ${DWI_MUSE_full%.nii.gz}.json \
+    #  -fslgrad ${DWI_MUSE_full%.nii.gz}.{bvec,bval} \
+    #  $DWI_MUSE_full \
+    #  ${tmpDir}/dwi_muse.mif
 
-      my_do_cmd dwidenoise \
-        ${tmpDir}/dwi_muse.mif ${tmpDir}/dwi_muse_d.mif
-
+      #my_do_cmd dwidenoise \
+      #  ${tmpDir}/dwi_muse.mif ${tmpDir}/dwi_muse_d.mif
+      my_do_cmd dipy_denoise_patch2self \
+        --verbose --log_level INFO \
+        --out_dir $tmpDir \
+        --out_denoised dwi_muse_d.nii.gz \
+        $DWI_MUSE_full \
+        ${DWI_MUSE_full%.nii.gz}.bval
       my_do_cmd mrconvert \
         -export_grad_fsl $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.{bvec,bval} \
         -json_export $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.json \
-        ${tmpDir}/dwi_muse_d.mif \
+        ${tmpDir}/dwi_muse_d.nii.gz \
         $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.nii.gz
+      
+
+      # my_do_cmd mrconvert \
+      #   -export_grad_fsl $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.{bvec,bval} \
+      #   -json_export $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.json \
+      #   ${tmpDir}/dwi_muse_d.mif \
+      #   $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.nii.gz
     else echolor green "[INFO] File exists: $fcheck"; fi
 
     echolor green "[INFO] Pre-processing MUSE acquisition"
