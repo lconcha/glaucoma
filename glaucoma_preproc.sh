@@ -154,6 +154,8 @@ if [ $do_muse -eq 1 ]; then
         $DWI_MUSE_full \
         ${DWI_MUSE_full%.nii.gz}.bval
       my_do_cmd mrconvert \
+        -fslgrad ${DWI_MUSE_full%.nii.gz}.{bvec,bval} \
+        -json_import ${DWI_MUSE_full%.nii.gz}.json \
         -export_grad_fsl $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.{bvec,bval} \
         -json_export $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi_d.json \
         ${tmpDir}/dwi_muse_d.nii.gz \
