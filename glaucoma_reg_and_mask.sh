@@ -236,59 +236,106 @@ else echolor green "[INFO] File exists: $fcheck"; fi
 
 echolor cyan "[INFO] ---------- Working on MUSE DWI ----------"
 
-fcheck=${outdir}/dwi/MUSE_av_b0_masked.nii.gz
+
+fcheck=${outdir}/dwi/muse_mask_brain+eyes.nii.gz
 if [ ! -f $fcheck -o $force -eq 1 ]; then
-  dwiextract -bzero $dwi_MUSE - | mrmath -quiet -axis 3 - mean ${outdir}/dwi/MUSE_av_b0.nii.gz
-  dwiextract -bzero $dwi_HB   - | mrmath -quiet -axis 3 - mean ${outdir}/dwi/HB_av_b0.nii.gz
-  dwi2mask $dwi_MUSE ${outdir}/dwi/MUSE_mask.nii.gz
-  mrcalc ${outdir}/dwi/MUSE_av_b0.nii.gz \
-    ${outdir}/dwi/MUSE_mask.nii.gz \
-    -mul \
-    ${outdir}/dwi/MUSE_av_b0_masked.nii.gz
-else echolor green "[INFO] File exists: $fcheck"; fi
+dwiextract -bzero $dwi_MUSE - | \
+  mrmath -quiet -axis 3 - mean ${outdir}/dwi/MUSE_av_b0.nii.gz
+mrgrid -template ${outdir}/anat/t1_noneck.nii.gz  \
+  ${outdir}/dwi/MUSE_av_b0.nii.gz regrid \
+  ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz
+mrcalc ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
+  0 -gt - | \
+  maskfilter -npass 2 - dilate - | \
+  mrcalc - ${outdir}/anat/t1_noneck.nii.gz -mul \
+  ${outdir}/anat/t1_muse_slab_t1space.nii.gz
 
-
-
-
-fcheck=${outdir}/dwi/HB_to_MUSE_av_b0.mat
-if [ ! -f $fcheck -o $force -eq 1 ]; then
 my_do_cmd $fakeflag flirt \
-  -ref  ${outdir}/dwi/MUSE_av_b0.nii \
-  -in   ${outdir}/dwi/HB_av_b0.nii \
-  -out  ${outdir}/dwi/HB_to_MUSE_av_b0.nii.gz \
-  -omat ${outdir}/dwi/HB_to_MUSE_av_b0.mat
-else echolor green "[INFO] File exists: $fcheck"; fi
+      -in ${outdir}/anat/t1_muse_slab_t1space.nii.gz \
+      -ref muse_avb0.nii \
+      -out ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
+      -omat ${outdir}/dwi/t1_to_muse.txt \
+      -v -dof 12 \
+      -usesqform
 
-
-
-fcheck=${outdir}/dwi/t12muse.nii.gz 
-if [ ! -f $fcheck -o $force -eq 1 ]; then
-my_do_cmd $fakeflag convert_xfm \
-  -omat ${outdir}/dwi/t1_to_MUSE.mat \
-  -concat \
-  ${outdir}/dwi/HB_to_MUSE_av_b0.mat \
-  ${outdir}/dwi/t1_to_HB.mat
-my_do_cmd flirt \
-  -ref ${outdir}/dwi/MUSE_av_b0.nii.gz \
-  -in  ${outdir}/anat/atlas2sub_mask_eyes \
-  -applyxfm -init ${outdir}/dwi/t1_to_MUSE.mat \
-  -out ${outdir}/dwi/MUSE_mask_eyes.nii.gz
-my_do_cmd mrcalc \
-  ${outdir}/dwi/MUSE_mask.nii.gz \
-  ${outdir}/dwi/MUSE_mask_eyes.nii.gz \
-  -or \
-  ${outdir}/dwi/MUSE_mask_with_eyes.nii.gz
-my_do_cmd $fakeflag mrgrid \
-    -voxel $t1_resolution \
-    ${outdir}/dwi/MUSE_av_b0.nii.gz \
-    regrid \
-    ${outdir}/dwi/MUSE_av_b0_regrid.nii.gz
 my_do_cmd $fakeflag flirt \
-    -ref ${outdir}/dwi/MUSE_av_b0_regrid.nii.gz \
+    -ref ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
     -in  ${outdir}/anat/t1_noneck.nii.gz \
     -applyxfm -init ${outdir}/dwi/t1_to_MUSE.mat \
-    -out ${outdir}/dwi/t12muse.nii.gz  
+    -out ${outdir}/dwi/t12muse.nii.gz 
+
+my_do_cmd $fakeflag flirt \
+    -ref ${outdir}/dwi/MUSE_av_b0.nii.gz \
+    -in ${outdir}/anat/atlas2sub_mask_eyes.nii.gz \
+    -applyxfm -init ${outdir}/dwi/t1_to_MUSE.mat \
+    -out ${outdir}/dwi/muse_mask_eyes.nii.gz 
+
+
+my_do_cmd $fakeflag dwi2mask $dwi_MUSE ${outdir}/dwi/muse_mask_brain.nii.gz
+my_do_cmd $fakeflag mrcalc \
+  ${outdir}/dwi/muse_mask_brain.nii.gz \
+  ${outdir}/dwi/muse_mask_eyes.nii.gz \
+  -add 0 -gt \
+  ${outdir}/dwi/muse_mask_brain+eyes.nii.gz
 else echolor green "[INFO] File exists: $fcheck"; fi
+
+
+
+
+
+# fcheck=${outdir}/dwi/MUSE_av_b0_masked.nii.gz
+# if [ ! -f $fcheck -o $force -eq 1 ]; then
+#   dwiextract -bzero $dwi_MUSE - | mrmath -quiet -axis 3 - mean ${outdir}/dwi/MUSE_av_b0.nii.gz
+#   dwiextract -bzero $dwi_HB   - | mrmath -quiet -axis 3 - mean ${outdir}/dwi/HB_av_b0.nii.gz
+#   dwi2mask $dwi_MUSE ${outdir}/dwi/MUSE_mask.nii.gz
+#   mrcalc ${outdir}/dwi/MUSE_av_b0.nii.gz \
+#     ${outdir}/dwi/MUSE_mask.nii.gz \
+#     -mul \
+#     ${outdir}/dwi/MUSE_av_b0_masked.nii.gz
+# else echolor green "[INFO] File exists: $fcheck"; fi
+
+
+
+
+# fcheck=${outdir}/dwi/HB_to_MUSE_av_b0.mat
+# if [ ! -f $fcheck -o $force -eq 1 ]; then
+# my_do_cmd $fakeflag flirt \
+#   -ref  ${outdir}/dwi/MUSE_av_b0.nii \
+#   -in   ${outdir}/dwi/HB_av_b0.nii \
+#   -out  ${outdir}/dwi/HB_to_MUSE_av_b0.nii.gz \
+#   -omat ${outdir}/dwi/HB_to_MUSE_av_b0.mat
+# else echolor green "[INFO] File exists: $fcheck"; fi
+
+
+
+# fcheck=${outdir}/dwi/t12muse.nii.gz 
+# if [ ! -f $fcheck -o $force -eq 1 ]; then
+# my_do_cmd $fakeflag convert_xfm \
+#   -omat ${outdir}/dwi/t1_to_MUSE.mat \
+#   -concat \
+#   ${outdir}/dwi/HB_to_MUSE_av_b0.mat \
+#   ${outdir}/dwi/t1_to_HB.mat
+# my_do_cmd flirt \
+#   -ref ${outdir}/dwi/MUSE_av_b0.nii.gz \
+#   -in  ${outdir}/anat/atlas2sub_mask_eyes \
+#   -applyxfm -init ${outdir}/dwi/t1_to_MUSE.mat \
+#   -out ${outdir}/dwi/MUSE_mask_eyes.nii.gz
+# my_do_cmd mrcalc \
+#   ${outdir}/dwi/MUSE_mask.nii.gz \
+#   ${outdir}/dwi/MUSE_mask_eyes.nii.gz \
+#   -or \
+#   ${outdir}/dwi/MUSE_mask_with_eyes.nii.gz
+# my_do_cmd $fakeflag mrgrid \
+#     -voxel $t1_resolution \
+#     ${outdir}/dwi/MUSE_av_b0.nii.gz \
+#     regrid \
+#     ${outdir}/dwi/MUSE_av_b0_regrid.nii.gz
+# my_do_cmd $fakeflag flirt \
+#     -ref ${outdir}/dwi/MUSE_av_b0_regrid.nii.gz \
+#     -in  ${outdir}/anat/t1_noneck.nii.gz \
+#     -applyxfm -init ${outdir}/dwi/t1_to_MUSE.mat \
+#     -out ${outdir}/dwi/t12muse.nii.gz  
+# else echolor green "[INFO] File exists: $fcheck"; fi
 
 
 
