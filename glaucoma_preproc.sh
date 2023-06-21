@@ -42,6 +42,13 @@ done
 shift $((OPTIND-1))
 
 
+if [ $do_hb -eq 0 -a $do_muse -eq 0 ]
+then
+  echolor red "[ERROR] Nothing to preprocess. You need to specify at least one of -m or -h (or -b for both)"
+  exit 2
+fi
+
+
 
 sID=$1
 bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
