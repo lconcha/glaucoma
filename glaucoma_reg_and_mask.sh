@@ -251,9 +251,9 @@ mrcalc ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
   ${outdir}/anat/t1_muse_slab_t1space.nii.gz
 
 my_do_cmd $fakeflag flirt \
-      -in ${outdir}/anat/t1_muse_slab_t1space.nii.gz \
-      -ref muse_avb0.nii \
-      -out ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
+      -in   ${outdir}/anat/t1_muse_slab_t1space.nii.gz \
+      -ref  ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
+      -out  ${outdir}/dwi/t1_to_muse.nii.gz \
       -omat ${outdir}/dwi/t1_to_muse.txt \
       -v -dof 12 \
       -usesqform
@@ -261,13 +261,13 @@ my_do_cmd $fakeflag flirt \
 my_do_cmd $fakeflag flirt \
     -ref ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
     -in  ${outdir}/anat/t1_noneck.nii.gz \
-    -applyxfm -init ${outdir}/dwi/t1_to_MUSE.mat \
+    -applyxfm -init ${outdir}/dwi/t1_to_muse.txt \
     -out ${outdir}/dwi/t12muse.nii.gz 
 
 my_do_cmd $fakeflag flirt \
     -ref ${outdir}/dwi/MUSE_av_b0.nii.gz \
-    -in ${outdir}/anat/atlas2sub_mask_eyes.nii.gz \
-    -applyxfm -init ${outdir}/dwi/t1_to_MUSE.mat \
+    -in  ${outdir}/anat/atlas2sub_mask_eyes.nii.gz \
+    -applyxfm -init ${outdir}/dwi/t1_to_muse.txt \
     -out ${outdir}/dwi/muse_mask_eyes.nii.gz 
 
 
