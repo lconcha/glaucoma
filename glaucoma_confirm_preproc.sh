@@ -26,7 +26,7 @@ do
 
   # Check registration and masks
   HB_mask=${bids_dir}/derivatives/sub-${sID}/dwi/HB_mask_with_eyes.nii.gz
-  MUSE_mask=${bids_dir}/derivatives/sub-${sID}/dwi/MUSE_mask_with_eyes.nii.gz
+  MUSE_mask=${bids_dir}/derivatives/sub-${sID}/dwi/muse_mask_brain+eyes.nii.gz
   atlas2sub=${bids_dir}/derivatives/sub-${sID}/anat/atlas2sub.nii.gz
   for f in $HB_mask $MUSE_mask $atlas2sub
     do
