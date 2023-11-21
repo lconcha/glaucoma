@@ -21,10 +21,10 @@ do
   case $arg in
     h)
       do_hb=1
-      echolor cyan "[INFO] Will preproc HB-DWI";;
+      echolor cyan "[INFO] Will start to preproc HB-DWI";;
     m)
       do_muse=1
-      echolor cyan "[INFO] Will preproc MUSE-DWI";;
+      echolor cyan "[INFO] Will start to preproc MUSE-DWI";;
     b)
       do_hb=1
       do_muse=1
