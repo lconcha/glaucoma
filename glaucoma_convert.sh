@@ -10,7 +10,6 @@ fi
 
 
 dicom_dir=$1
-nifti_dir=/misc/mansfield/lconcha/exp/glaucoma/raw
 bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
 config=/misc/mansfield/lconcha/software/glaucoma/glaucoma_dcm2bids_config.json
 
