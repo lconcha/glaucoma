@@ -1,6 +1,6 @@
 #!/bin/bash
 
-bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
+bids_dir=$1; #/misc/mansfield/lconcha/exp/glaucoma/bids
 
 
 for s in $(ls -d ${bids_dir}/sub-*)
