@@ -250,6 +250,9 @@ mrcalc ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
   mrcalc - ${outdir}/anat/t1_noneck.nii.gz -mul \
   ${outdir}/anat/t1_muse_slab_t1space.nii.gz
 
+
+if [ ! -f ${outdir}/dwi/t1_to_muse.txt ]
+then
 my_do_cmd $fakeflag flirt \
       -in   ${outdir}/anat/t1_muse_slab_t1space.nii.gz \
       -ref  ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
@@ -257,6 +260,7 @@ my_do_cmd $fakeflag flirt \
       -omat ${outdir}/dwi/t1_to_muse.txt \
       -v -dof 12 \
       -usesqform
+fi
 
 my_do_cmd $fakeflag flirt \
     -ref ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
@@ -265,10 +269,38 @@ my_do_cmd $fakeflag flirt \
     -out ${outdir}/dwi/t12muse.nii.gz 
 
 my_do_cmd $fakeflag flirt \
-    -ref ${outdir}/dwi/MUSE_av_b0.nii.gz \
+    -ref ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
     -in  ${outdir}/anat/atlas2sub_mask_eyes.nii.gz \
     -applyxfm -init ${outdir}/dwi/t1_to_muse.txt \
-    -out ${outdir}/dwi/muse_mask_eyes.nii.gz 
+    -out ${outdir}/dwi/muse_mask_eyes_t1resolution.nii.gz 
+
+my_do_cmd $fakeflag mrcalc \
+    ${outdir}/anat/atlas2sub_mask_eyes.nii.gz \
+    ${outdir}/anat/t1_mask.nii.gz \
+    -add 0 -gt \
+    ${outdir}/anat/atlas2sub_mask_brain+eyes.nii.gz
+
+my_do_cmd $fakeflag flirt \
+    -ref ${outdir}/dwi/MUSE_av_b0_t1resolution.nii.gz \
+    -in  ${outdir}/anat/atlas2sub_mask_brain+eyes.nii.gz \
+    -applyxfm -init ${outdir}/dwi/t1_to_muse.txt \
+    -interp nearestneighbour \
+    -out ${outdir}/anat/atlas2sub_mask_brain+eyes_t1resolution.nii.gz 
+     
+
+my_do_cmd $fakeflag mrgrid \
+    -template ${outdir}/dwi/MUSE_av_b0.nii.gz \
+    -interp nearest \
+    ${outdir}/dwi/muse_mask_eyes_t1resolution.nii.gz \
+    regrid \
+    ${outdir}/dwi/muse_mask_eyes.nii.gz
+
+my_do_cmd $fakeflag mrgrid \
+    -template ${outdir}/dwi/MUSE_av_b0.nii.gz \
+    -interp nearest \
+    ${outdir}/anat/atlas2sub_mask_brain+eyes_t1resolution.nii.gz \
+    regrid \
+    ${outdir}/dwi/atlas2sub_muse_mask_brain+eyes.nii.gz
 
 
 my_do_cmd $fakeflag dwi2mask $dwi_MUSE ${outdir}/dwi/muse_mask_brain.nii.gz
