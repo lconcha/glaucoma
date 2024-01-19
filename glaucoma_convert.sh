@@ -11,7 +11,7 @@ fi
 
 dicom_dir=$1
 bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
-config=/misc/mansfield/lconcha/software/glaucoma/glaucoma_dcm2bids_config.json
+config=/misc/lauterbur/lconcha/code/glaucoma/glaucoma_dcm2bids_config.json
 
 # find the first dicom file to get subject ID from it
 dcm=$(find $dicom_dir -name IM*0001.dcm | head -n 1)
