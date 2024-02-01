@@ -1,7 +1,11 @@
 #!/bin/bash
 
+module unload freesurfer
 module load freesurfer/7.4.0 fsl/6.0.7.1
 export SUBJECTS_DIR=/misc/mansfield/lconcha/exp/glaucoma/fs_glaucoma
+
+
+
 
 bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
 logs=/misc/mansfield/lconcha/exp/glaucoma/logs
