@@ -19,7 +19,7 @@ do
       echolor red "[ERROR] Cannot find file: $t1"
     else
       fsl_sub -q all.q -N fs-${sID} -l $logs \
-        recon-all -subjid $sID -i $t1 -all
+        recon-all -subjid sub-${sID} -i $t1 -all
     fi
   fi
 done
