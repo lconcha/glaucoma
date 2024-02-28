@@ -9,7 +9,13 @@ then
   echolor red "        Try: conda activate /home/inb/lconcha/fmrilab_software/inb_anaconda3/envs/dipy"
   exit 2
 fi
-
+# check if CUDA will work
+failedstring=$(nvidia-smi | grep Failed)
+if [ ! -z "$failedstring" ]
+then
+  echolor red "[ERROR] CUDA is not working on this host, try another one."
+  exit 2
+fi
 
 do_hb=0
 do_muse=0
