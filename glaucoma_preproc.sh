@@ -93,7 +93,7 @@ if [ $do_hb -eq 1 ]; then
       my_do_cmd dwidenoise \
         ${tmpDir}/dwi_hb.mif ${tmpDir}/dwi_hb_d.mif
 
-      my_do_cmd mrconvert \
+      my_do_cmd mrconvert -force \
         -export_grad_fsl $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi_d.{bvec,bval} \
         -json_export $bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi_d.json \
         ${tmpDir}/dwi_hb_d.mif \
