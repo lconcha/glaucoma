@@ -56,7 +56,7 @@ fi
 
 sID=$1
 #bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
-bids_dir=/misc/mansfield/lconcha/exp/EsclerosisTuberosa/bids
+bids_dir=/misc/mansfield/lconcha/exp/glaucoma/bids
 DWI_HB_full=${bids_dir}/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi.nii.gz
 DWI_HB_pepolar=${bids_dir}/sub-${sID}/fmap/sub-${sID}_acq-hb_epi.nii.gz
 DWI_MUSE_full=${bids_dir}/sub-${sID}/dwi/sub-${sID}_acq-muse_dwi.nii.gz
@@ -87,10 +87,15 @@ if [ $do_hb -eq 1 ]; then
     echolor green "[INFO] Pre-processing Hyperband acquisition"
     fcheck=$bids_dir/derivatives/sub-${sID}/dwi/sub-${sID}_acq-hb_dwi_de_designer.mif
     if [ ! -f $fcheck ]; then
-        singularity run --nv -B $bids_dir $designer_container designer \
+        singularity run --nv \
+            -B $bids_dir \
+            -B /tmp \
+            $designer_container designer \
+            -scratch /tmp \
             -eddy \
             -mask \
             -denoise \
+            -rician \
             -rpe_pair $DWI_HB_pepolar \
             -pe_dir AP \
             $DWI_HB_full \
